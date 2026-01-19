@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Grilles d’évaluation de la douleur</title>
+  <style>
+    body{font-family:Arial,sans-serif;margin:0;background:#f6f7f9;color:#111}
+    .wrap{max-width:1100px;margin:0 auto;padding:20px}
+    h1{margin:0 0 10px 0}
+    .sub{opacity:.8;margin:0 0 16px 0}
+    .search{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #ddd;font-size:16px}
+    .section{margin-top:22px}
+    .section h2{margin:0 0 10px 0;font-size:18px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+    .card{display:block;background:#fff;border:1px solid #e7e7e7;border-radius:12px;padding:14px;text-decoration:none;color:inherit;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+    .title{font-weight:800;margin-bottom:6px}
+    .meta{font-size:14px;opacity:.78}
+    .tags{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+    .tag{display:inline-block;padding:4px 8px;border-radius:999px;background:#eee;font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Grilles d’évaluation de la douleur</h1>
+    <p class="sub">Menu + recherche. Clique sur une échelle pour l’ouvrir.</p>
+
+    <input id="q" class="search" type="search" placeholder="Rechercher (ex: DAN, EDIN, polyhandicap, neuropathique…)" />
+
+    <div id="content"></div>
+  </div>
+
+  <script>
+    // ✅ ICI tu ajoutes tes échelles (1 ligne = 1 échelle)
+    // url peut être une page de ton repo ("edin.html") ou un lien externe ("https://...")
+    const links = [
+      // DOULEUR AIGUE ET/OU PROLONGEE
+      {cat:"DOULEUR AIGUE ET/OU PROLONGEE", name:"Échelle des visages", age:"4–5 ans et +", url:"https://", tags:["auto-évaluation"]},
+      {cat:"DOULEUR AIGUE ET/OU PROLONGEE", name:"EVA", age:"6 ans et +", url:"https://", tags:["auto-évaluation"]},
+      {cat:"DOULEUR AIGUE ET/OU PROLONGEE", name:"Schéma du bonhomme", age:"4 ans et +", url:"https://", tags:["auto-évaluation"]},
+      {cat:"DOULEUR AIGUE ET/OU PROLONGEE", name:"EN", age:"8 ans et +", url:"https://", tags:["auto-évaluation"]},
+      {cat:"DOULEUR AIGUE ET/OU PROLONGEE", name:"EVENDOL", age:"Naissance – 8 ans", url:"https://", tags:["hétéro-évaluation"]},
+      {cat:"DOULEUR AIGUE ET/OU PROLONGEE", name:"COMFORT", age:"Naissance et +", url:"https://", tags:["douleur/sédation"]},
+
+      // DOULEUR AIGUE
+      {cat:"DOULEUR AIGUE", name:"DAN", age:"Naissance – 3 mois", url:"dan.html", tags:["score auto (0–10)"]},
+      {cat:"DOULEUR AIGUE", name:"FLACC", age:"2 mois – 7 ans", url:"https://", tags:["score auto"]},
+      {cat:"DOULEUR AIGUE", name:"CHEOPS", age:"1 – 7 ans", url:"cheops.html", tags:["score auto (4–13)", "seuil 8"]},
+
+      // DOULEUR PROLONGEE
+      {cat:"DOULEUR PROLONGEE", name:"EDIN", age:"Naissance – 3 mois", url:"edin.html", tags:["score auto (0–15)", "seuil 5"]},
+      {cat:"DOULEUR PROLONGEE", name:"HEDEN", age:"2 – 7 ans", url:"https://", tags:["score auto"]},
+
+      // DOULEUR ENFANT HANDICAPEE
+      {cat:"DOULEUR ENFANT HANDICAPEE", name:"FLACC modifié", age:"Naissance – 18 ans", url:"https://", tags:["douleur aiguë"]},
+      {cat:"DOULEUR ENFANT HANDICAPEE", name:"GED-DI", age:"3 ans et +", url:"https://", tags:["douleur prolongée"]},
+      {cat:"DOULEUR ENFANT HANDICAPEE", name:"SAN SALVADOUR (DESS)", age:"Naissance et +", url:"san-salvadour.html", tags:["score auto (0–40)", "seuil 6"]},
+      {cat:"DOULEUR ENFANT HANDICAPEE", name:"DEGR", age:"9 mois – 10 ans", url:"https://", tags:["douleur prolongée"]},
+
+      // DOULEUR NEUROPATHIQUE
+      {cat:"DOULEUR NEUROPATHIQUE", name:"DN4", age:"8 ans et +", url:"https://", tags:["questionnaire"]},
+    ];
+
+    function groupBy(arr, key){
+      const m = new Map();
+      for (const x of arr){
+        const k = x[key];
+        if (!m.has(k)) m.set(k, []);
+        m.get(k).push(x);
+      }
+      return m;
+    }
+
+    function isExternal(u){
+      return u && (u.startsWith("http://") || u.startsWith("https://"));
+    }
+
+    function card(l){
+      const a = document.createElement("a");
+      a.className = "card";
+      a.href = l.url || "#";
+      if (isExternal(l.url)){
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+      }
+      a.dataset.q = (l.cat+" "+l.name+" "+(l.age||"")+" "+(l.tags||[]).join(" ")).toLowerCase();
+      a.innerHTML = `
+        <div class="title">${l.name}</div>
+        <div class="meta">${l.age || ""}</div>
+        <div class="meta">${l.cat}</div>
+        <div class="tags">${(l.tags||[]).map(t=>`<span class="tag">${t}</span>`).join("")}</div>
+      `;
+      return a;
+    }
+
+    const content = document.getElementById("content");
+    const q = document.getElementById("q");
+
+    function render(){
+      content.innerHTML = "";
+      const grouped = groupBy(links, "cat");
+
+      for (const [cat, arr] of grouped){
+        const sec = document.createElement("div");
+        sec.className = "section";
+        sec.innerHTML = `<h2>${cat}</h2>`;
+        const grid = document.createElement("div");
+        grid.className = "grid";
+        arr.forEach(l => grid.appendChild(card(l)));
+        sec.appendChild(grid);
+        content.appendChild(sec);
+      }
+    }
+
+    function filter(){
+      const s = q.value.trim().toLowerCase();
+      document.querySelectorAll(".card").forEach(c=>{
+        c.style.display = c.dataset.q.includes(s) ? "" : "none";
+      });
+    }
+
+    render();
+    q.addEventListener("input", filter);
+  </script>
+</body>
+</html>
